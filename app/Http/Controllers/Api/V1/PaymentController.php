@@ -8,6 +8,8 @@ use App\Models\Payment;
 use ResponseService;
 use CrudService;
 use App\Http\Requests\PaymentRequest;
+use App\Jobs\DeleteMultiplePayment;
+use App\Events\DeletePaymentEvent;
 
 class PaymentController extends Controller
 {
@@ -86,13 +88,34 @@ class PaymentController extends Controller
      */
     public function destroy($id,Request $request)
     {
-
+        //check single or multiple delete
         if($id == 'multiple'){
-            $this->model->whereIn('id',$request->ids)->delete();
-             return $this->response->setCode(200)->setMsg('Data Berhasil Dihapus')->get();
-        }else{
 
-            $this->model->findOrFail($id)->delete();
+             // count data
+             $total_data = count($request->ids);
+
+             if($total_data > 0 ){
+                
+                // looping ids request
+                for ($i=0; $i < count($request->ids) ; $i++) { 
+
+                  // execute jobs delete mulitple payment
+                  DeleteMultiplePayment::dispatch($request->ids[$i]);
+                  DeletePaymentEvent::dispatch($total_data,$i+1);
+                }
+
+                // response success delete multiple
+                return $this->response->setCode(200)->setMsg('Telah Berhasil menghapus '.$total_data.' Data' )->get();
+                
+             }else{
+
+                // response when ids request < 1
+                return $this->response->setCode(500)->setErrors(['details' => 'Data Harus Lebih dari 1'])->get();
+             }
+             
+        }else{
+            //single delete
+             $this->model->findOrFail($id)->delete();
              return $this->response->setCode(200)->setMsg('Data Berhasil Dihapus')->get();
         }
 

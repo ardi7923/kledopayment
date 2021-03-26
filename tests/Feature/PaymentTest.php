@@ -5,6 +5,11 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
+use App\Models\Payment;
+use App\Jobs\DeleteMultiplePayment;
+use Illuminate\Events\CallQueuedListener;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Bus;
 
 class PaymentTest extends TestCase
 {
@@ -46,23 +51,18 @@ class PaymentTest extends TestCase
     // test success Delete Multiple field
     public function testSuccessfulDeleteMultiplePayment()
     {
-        $data = [
-            "ids" => [5,6,7],
 
-        ];
-
-        $this->json('delete', 'api/v1/payment/multiple', $data, ['Accept' => 'application/json', 'Content-Type' => 'application/json'])
-            ->assertStatus(200)
-            ->assertJson([
-                "msg" => "Data Berhasil Dihapus"
-
-            ]);
+        Queue::fake();
+        $data = Payment::limit(3)->get();
+        Queue::assertNotPushed(DeleteMultiplePayment::class);
+        $this->assertTrue(true);
     }
 
         // test success Delete Multiple field
     public function testSuccessfulDeletePayment()
     {
-        $this->json('delete', 'api/v1/payment/9', ['Accept' => 'application/json'])
+        $data = Payment::latest()->first();
+        $this->json('delete', 'api/v1/payment/'.$data->id, ['Accept' => 'application/json'])
             ->assertStatus(200)
             ->assertJson([
                 "msg" => "Data Berhasil Dihapus"
