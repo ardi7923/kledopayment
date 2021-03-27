@@ -23,7 +23,7 @@ class DeletePaymentEvent
      *
      * @return void
      */
-    public function __construct($total_data,$total_delete)
+    public function __construct($total_data = 0,$total_delete = 0)
     {
         $this->total_data   = $total_data;
         $this->total_delete = $total_delete;
